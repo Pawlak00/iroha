@@ -49,9 +49,6 @@ func CreateAccount(name string, domain string, key string) error {
 			PublicKey:   key,
 		}}}
 	commandResult, err := makeProtobufCmdAndExecute(IrohaCommandExecutor, command)
-	fmt.Println("in commands.go")
-	fmt.Println(commandResult)
-	fmt.Println(err)
 	return handleErrors(commandResult, err, "CreateAccount")
 }
 
@@ -637,9 +634,6 @@ func handleErrors(result *C.Iroha_CommandError, err error, commandName string) (
 	if err != nil {
 		return err
 	}
-	fmt.Println("in error handling")
-	fmt.Println(result)
-	fmt.Println(result.error_code)
 	if result.error_code != 0 {
 		error_extra := ""
 		error_extra_ptr := result.error_extra.toStringAndRelease()
