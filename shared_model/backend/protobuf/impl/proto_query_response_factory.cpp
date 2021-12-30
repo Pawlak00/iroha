@@ -376,11 +376,14 @@ shared_model::proto::ProtoQueryResponseFactory::createEngineReceiptsResponse(
     std::vector<std::unique_ptr<shared_model::interface::EngineReceipt>> const
         &engine_receipts,
     crypto::Hash const &query_hash) const {
+      std::cout<<"making Engine Receipt response"<<std::endl;
+      std::cout<<engine_receipts.size()<<std::endl;
+      std::cout<<engine_receipts.at(0).get()<<std::endl;
   return createQueryResponse(
       [&](iroha::protocol::QueryResponse &protocol_query_response) {
         auto *protocol_specific_response =
             protocol_query_response.mutable_engine_receipts_response();
-
+        std::cout<<"creating proto response "<<std::endl;
         for (auto const &receipt : engine_receipts) {
           auto *proto_receipt =
               protocol_specific_response->add_engine_receipts();
@@ -404,6 +407,8 @@ shared_model::proto::ProtoQueryResponseFactory::createEngineReceiptsResponse(
             auto *ptr_call_result = proto_receipt->mutable_call_result();
             ptr_call_result->set_callee(receipt->getResponseData()->callee);
             if (!!receipt->getResponseData()->response_data)
+              std::cout<<"setting response data "<<std::endl;
+              std::cout<<*receipt->getResponseData()->response_data<<std::endl;
               ptr_call_result->set_result_data(
                   *receipt->getResponseData()->response_data);
           }

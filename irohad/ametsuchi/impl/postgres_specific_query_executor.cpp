@@ -13,7 +13,7 @@
 #include <boost/range/irange.hpp>
 #include <tuple>
 #include <unordered_map>
-
+#include <iostream>
 #include "ametsuchi/block_storage.hpp"
 #include "ametsuchi/impl/executor_common.hpp"
 #include "ametsuchi/impl/soci_std_optional.hpp"
@@ -1519,6 +1519,7 @@ namespace iroha {
         const shared_model::interface::GetEngineReceipts &q,
         const shared_model::interface::types::AccountIdType &creator_id,
         const shared_model::interface::types::HashType &query_hash) {
+          std::cout<<"here our pain begins"<<std::endl;
       auto cmd = fmt::format(
           R"(
             with
@@ -1534,6 +1535,7 @@ namespace iroha {
               engine_calls.callee,
               engine_calls.created_address,
               engine_calls.engine_response,
+              engine_calls.engine_err_response,
               burrow_tx_logs.log_idx,
               burrow_tx_logs.address,
               burrow_tx_logs.data,
@@ -1551,13 +1553,14 @@ namespace iroha {
                                      Role::kGetMyEngineReceipts,
                                      Role::kGetAllEngineReceipts,
                                      Role::kGetDomainEngineReceipts));
-
+      std::cout<<cmd<<std::endl;
       using QueryTuple =
           QueryType<shared_model::interface::types::CommandIndexType,
                     shared_model::interface::types::AccountIdType,
                     shared_model::interface::types::EvmDataHexString,
                     shared_model::interface::types::EvmAddressHexString,
                     shared_model::interface::types::EvmDataHexString,
+                    std::string,
                     uint32_t,
                     shared_model::interface::types::EvmAddressHexString,
                     shared_model::interface::types::EvmDataHexString,
@@ -1612,6 +1615,7 @@ namespace iroha {
                                  auto &payload_callee,
                                  auto &payload_cantract_address,
                                  auto &engine_response,
+                                 auto &engine_err_response,
                                  auto &logs_ix,
                                  auto &log_address,
                                  auto &log_data,
