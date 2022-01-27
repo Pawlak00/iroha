@@ -140,9 +140,7 @@ Irohad::Irohad(
   // initialization of iroha daemon
 
   if (auto e = expected::resultToOptionalError(initPendingTxsStorage() | [&] {
-#if defined(USE_BURROW)
-        vm_caller_ = std::make_unique<iroha::ametsuchi::BurrowVmCaller>();
-#endif
+
         return initStorage(
             startup_wsv_data_policy,
             config_.database_config
@@ -152,7 +150,10 @@ Irohad::Irohad(
       })) {
     log_->error("Storage initialization failed: {}", e.value());
   }
-  
+  #if defined(USE_BURROW)
+        // create and pass burrow storage here
+        vm_caller_ = std::make_unique<iroha::ametsuchi::BurrowVmCaller>();
+  #endif
 }
 
 Irohad::~Irohad() {
@@ -258,11 +259,7 @@ Irohad::RunResult Irohad::initStorage(
   query_response_factory_ =
       std::make_shared<shared_model::proto::ProtoQueryResponseFactory>();
 
-  std::optional<std::reference_wrapper<const iroha::ametsuchi::VmCaller>>
-      vm_caller_ref;
-  if (vm_caller_) {
-    vm_caller_ref = *vm_caller_.value();
-  }
+  
 
   auto storage_creator = [&]() -> RunResult {
     auto process_block =
@@ -340,14 +337,20 @@ Irohad::RunResult Irohad::initStorage(
       return iroha::expected::makeError<std::string>(
           "Unexpected storage type!");
   }
-    // sql = std::make_unique<soci::session>(*pool_wrapper_->connection_pool_);
-    // const std::string tx = " ";
-    // burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
-    // std::cout<<&burrow_storage_.value().get()<<std::endl;
-    // vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
-  auto tmp = storage_creator();
-  
-  return tmp;
+  std::optional<std::reference_wrapper<const iroha::ametsuchi::VmCaller>>
+      vm_caller_ref;
+  if (vm_caller_) {
+    vm_caller_.setDbConnection(connection from pool wrapper)
+    vm_caller_ref = *vm_caller_.value();
+  }
+  return storage_creator();
+}
+
+void Irohad::printDbStatus() {
+  if (db_context_ && log_) {
+    RocksDbCommon common(db_context_);
+    common.printStatus(*log_);
+  }
 }
 
 Irohad::RunResult Irohad::restoreWsv() {
