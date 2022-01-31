@@ -25,6 +25,7 @@
 #include "main/subscription_fwd.hpp"
 #include "multi_sig_transactions/gossip_propagation_strategy_params.hpp"
 #include "torii/tls_params.hpp"
+#include "ametsuchi/impl/postgres_burrow_storage.hpp"
 
 namespace google::protobuf {
   class Empty;
@@ -118,6 +119,7 @@ namespace shared_model {
 
 class Irohad {
  public:
+  
   using RunResult = iroha::expected::Result<void, std::string>;
 
   /**
@@ -181,6 +183,7 @@ class Irohad {
    * @return void value on success, error message otherwise
    */
   RunResult run();
+
 
   virtual ~Irohad();
 
@@ -274,7 +277,11 @@ class Irohad {
       query_response_factory_;
 
   // ------------------------| internal dependencies |-------------------------
+
+  std::optional<std::shared_ptr<iroha::ametsuchi::PostgresBurrowStorage>>burrow_storage_;
+
   std::optional<std::unique_ptr<iroha::ametsuchi::VmCaller>> vm_caller_;
+
   std::shared_ptr<iroha::ametsuchi::RocksDBContext> db_context_;
 
  public:
