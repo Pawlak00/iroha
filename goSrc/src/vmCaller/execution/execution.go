@@ -121,6 +121,45 @@ func addressFromNonce(nonce string) (address crypto.Address) {
 	return
 }
 
+func (w *EngineWrapper) Execute(caller, callee crypto.Address, input []byte) ([]byte, error) {
+	var gas uint64 = 1000000
+
+	calleeAccount, err := w.state.GetAccount(callee)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting account at address %s: %s",
+			callee.String(), err.Error())
+	}
+	if calleeAccount == nil {
+		return nil, fmt.Errorf("Contract account does not exists at address %s", callee.String())
+	}
+
+	params := engine.CallParams{
+		Caller: caller,
+		Callee: callee,
+		Input:  input,
+		Value:  0,
+		Gas:    &gas,
+	}
+	output, err := w.engine.Execute(w.state, blockchain.New(), w.eventSink, params, calleeAccount.EVMCode)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error calling smart contract at address %s: %s %s",
+			callee.String(), err.Error(), iroha.IrohaErrorDetails)
+	}
+
+	return output, nil
+}
+
+func makeError(msg string) (*C.char, *C.char) {
+	return nil, C.CString(msg)
+}
+
+func addressFromNonce(nonce string) (address crypto.Address) {
+	hash := crypto.Keccak256(hex.MustDecodeString(nonce))
+	copy(address[:], hash[len(hash)-crypto.AddressLength:])
+	return
+}
+
 // Run the given code on an isolated and unpersisted state
 // Cannot be used to create new contracts.
 func CallCodeSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string, address crypto.Address, code, data []byte,
