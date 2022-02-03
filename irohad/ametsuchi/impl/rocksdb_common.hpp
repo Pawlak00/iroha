@@ -468,6 +468,19 @@ namespace iroha::ametsuchi {
         assert(*db_name_ == db_name);
         return {};
       }
+    }
+
+    expected::Result<void, DbError> reinitDB() {
+      assert(db_name_);
+      closeDb();
+
+      rocksdb::BlockBasedTableOptions table_options;
+      table_options.block_cache = rocksdb::NewLRUCache(512 * 1024 * 1024LL);
+      table_options.block_size = 32 * 1024;
+      // table_options.pin_l0_filter_and_index_blocks_in_cache = true;
+      table_options.cache_index_and_filter_blocks = true;
+      table_options.filter_policy.reset(
+          rocksdb::NewBloomFilterPolicy(10, false));
 
       rocksdb::Options options;
       options.create_if_missing = true;
@@ -487,6 +500,48 @@ namespace iroha::ametsuchi {
       return {};
     }
 
+    template <typename LoggerT>
+    void printStatus(LoggerT &log) {
+      if (transaction_db_) {
+        auto read_property = [&](const rocksdb::Slice &property) {
+          uint64_t value;
+          transaction_db_->GetIntProperty(property, &value);
+          return value;
+        };
+
+        auto read_property_str = [&](const rocksdb::Slice &property) {
+          std::string value;
+          transaction_db_->GetProperty(property, &value);
+          return value;
+        };
+
+        log.info(
+            "[ROCKSDB MEMORY STATUS]\nrocksdb.block-cache-usage: "
+            "{}\nrocksdb.block-cache-pinned-usage: "
+            "{}\nrocksdb.estimate-table-readers-mem: "
+            "{}\nrocksdb.cur-size-all-mem-tables: {}\nrocksdb.num-snapshots: "
+            "{}\nrocksdb.total-sst-files-size: "
+            "{}\nrocksdb.block-cache-capacity: {}\nrocksdb.stats: {}",
+            read_property("rocksdb.block-cache-usage"),
+            read_property("rocksdb.block-cache-pinned-usage"),
+            read_property("rocksdb.estimate-table-readers-mem"),
+            read_property("rocksdb.cur-size-all-mem-tables"),
+            read_property("rocksdb.num-snapshots"),
+            read_property("rocksdb.total-sst-files-size"),
+            read_property("rocksdb.block-cache-capacity"),
+            read_property_str("rocksdb.stats"));
+      }
+    }
+
+    std::optional<uint64_t> getPropUInt64(const rocksdb::Slice &property) {
+      if (transaction_db_) {
+        uint64_t value;
+        transaction_db_->GetIntProperty(property, &value);
+        return value;
+      }
+      return std::nullopt;
+    }
+
    private:
     std::unique_ptr<rocksdb::OptimisticTransactionDB> transaction_db_;
     std::optional<std::string> db_name_;
@@ -494,8 +549,16 @@ namespace iroha::ametsuchi {
 
     void prepareTransaction(RocksDBContext &tx_context) {
       assert(transaction_db_);
-      tx_context.transaction.reset(
-          transaction_db_->BeginTransaction(rocksdb::WriteOptions()));
+      if (tx_context.transaction) {
+        [[maybe_unused]] auto result =
+            transaction_db_->BeginTransaction(rocksdb::WriteOptions(),
+                                              rocksdb::TransactionOptions(),
+                                              tx_context.transaction.get());
+        assert(result == tx_context.transaction.get());
+      } else {
+        tx_context.transaction.reset(
+            transaction_db_->BeginTransaction(rocksdb::WriteOptions()));
+      }
     }
   };
 
@@ -599,7 +662,19 @@ namespace iroha::ametsuchi {
 
     void dropCache() {
       if (auto c = cache())
-        c->drop();
+        c->rollback();
+    }
+
+    void commitCache() {
+      if (auto c = cache())
+        c->commit();
+    }
+
+    auto getHandle(RocksDBPort::ColumnFamilyType type) {
+      assert(type < RocksDBPort::ColumnFamilyType::kTotal);
+      assert(port()->cf_handles[type].handle != nullptr);
+
+      return port()->cf_handles[type].handle;
     }
 
    public:
@@ -635,9 +710,12 @@ namespace iroha::ametsuchi {
     /// Makes commit to DB
     auto commit() {
       rocksdb::Status status;
-      if (isTransaction())
-        status = transaction()->Commit();
-
+      if (isTransaction()) {
+        if ((status = transaction()->Commit()); !status.ok())
+          dropCache();
+        else
+          commitCache();
+      }
       transaction().reset();
       return status;
     }
@@ -793,8 +871,11 @@ namespace iroha::ametsuchi {
 
     /// Removes range of items by key-filter
     template <typename S, typename... Args>
-    auto filterDelete(S const &fmtstring, Args &&... args) {
-      auto it = seek(fmtstring, std::forward<Args>(args)...);
+    auto filterDelete(uint64_t delete_count,
+                      RocksDBPort::ColumnFamilyType cf_type,
+                      S const &fmtstring,
+                      Args &&... args) -> std::pair<bool, rocksdb::Status> {
+      auto it = seek(cf_type, fmtstring, std::forward<Args>(args)...);
       if (!it->status().ok())
         return it->status();
 
@@ -802,9 +883,18 @@ namespace iroha::ametsuchi {
       if (auto c = cache(); c && c->isCacheable(key.ToStringView()))
         c->filterDelete(key.ToStringView());
 
-      for (; it->Valid() && it->key().starts_with(key); it->Next())
-        if (auto status = transaction()->Delete(it->key()); !status.ok())
-          return status;
+      bool was_deleted = false;
+      for (; delete_count-- && it->Valid() && it->key().starts_with(key);
+           it->Next()) {
+        if (auto status = transaction()->Delete(getHandle(cf_type), it->key());
+            !status.ok())
+          return std::pair<bool, rocksdb::Status>(was_deleted, status);
+        else
+          was_deleted = true;
+      }
+
+      return std::pair<bool, rocksdb::Status>(was_deleted, it->status());
+    }
 
       return it->status();
     }
@@ -1822,10 +1912,13 @@ namespace iroha::ametsuchi {
     return result;
   }
 
+  inline expected::Result<void, DbError> dropStore(RocksDbCommon &common) {
+    common.dropTable(RocksDBPort::ColumnFamilyType::kStore);
+    return {};
+  }
+
   inline expected::Result<void, DbError> dropWSV(RocksDbCommon &common) {
-    if (auto status = common.filterDelete(fmtstrings::kPathWsv); !status.ok())
-      return makeError<void>(DbErrorCode::kOperationFailed,
-                             "Clear WSV failed.");
+    common.dropTable(RocksDBPort::ColumnFamilyType::kWsv);
     return {};
   }
 
