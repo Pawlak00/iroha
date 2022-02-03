@@ -37,7 +37,6 @@ namespace iroha::ametsuchi {
          BurrowStorage &burrow_storage,
          CommandExecutor &command_executor,
          SpecificQueryExecutor &query_executor) const = 0;
-    // virtual void setBurrowHandler() const = 0;
   };
 }  // namespace iroha::ametsuchi
 
