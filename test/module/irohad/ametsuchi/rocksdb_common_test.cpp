@@ -299,6 +299,69 @@ TEST_F(RocksDBTest, SimpleDelete) {
   ASSERT_TRUE(status.IsNotFound());
 }
 
+TEST_F(RocksDBTest, RemoveTableTest) {
+  {
+    RocksDbCommon common(tx_context_);
+    common.valueBuffer() = "aaa";
+    ASSERT_TRUE(
+        common.put(RocksDBPort::ColumnFamilyType::kWsv, "test_key").ok());
+    ASSERT_TRUE(
+        common.put(RocksDBPort::ColumnFamilyType::kStore, "test_key").ok());
+    ASSERT_TRUE(common.commit().ok());
+
+    common.valueBuffer().clear();
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "aaa");
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kStore, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "aaa");
+    ASSERT_TRUE(common.commit().ok());
+
+    common.dropTable(RocksDBPort::ColumnFamilyType::kWsv);
+    ASSERT_TRUE(common.get(RocksDBPort::ColumnFamilyType::kWsv, "test_key")
+                    .IsNotFound());
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kStore, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "aaa");
+
+    common.valueBuffer() = "bbb";
+    ASSERT_TRUE(
+        common.put(RocksDBPort::ColumnFamilyType::kWsv, "test_key").ok());
+    ASSERT_TRUE(common.commit().ok());
+
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "bbb");
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kStore, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "aaa");
+  }
+  {
+    RocksDbCommon common(tx_context_);
+    common.valueBuffer().clear();
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "bbb");
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kStore, "test_key").ok());
+    ASSERT_TRUE(common.valueBuffer() == "aaa");
+    ASSERT_TRUE(common.commit().ok());
+  }
+}
+
+TEST_F(RocksDBTest, SimpleInsert) {
+  RocksDbCommon common(tx_context_);
+
+  common.valueBuffer() = "k777";
+  common.put(RocksDBPort::ColumnFamilyType::kWsv, "k777");
+
+  common.valueBuffer().clear();
+  auto status = common.get(RocksDBPort::ColumnFamilyType::kWsv, "k777");
+  ASSERT_TRUE(status.ok());
+  ASSERT_TRUE(common.valueBuffer() == "k777");
+}
+
 TEST_F(RocksDBTest, SimpleSeek) {
   RocksDbCommon common(tx_context_);
   auto it = common.seek("key");
@@ -338,8 +401,53 @@ TEST_F(RocksDBTest, FilterDelete) {
   }
   {
     RocksDbCommon common(tx_context_);
-    ASSERT_TRUE(common.get(key1_).IsNotFound());
-    ASSERT_TRUE(common.get(key2_).IsNotFound());
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, key1_).IsNotFound());
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, key2_).IsNotFound());
+  }
+  {
+    ASSERT_TRUE(readDb(key3_) == value3_);
+    ASSERT_TRUE(readDb(key4_) == value4_);
+    ASSERT_TRUE(readDb(key5_) == value5_);
+  }
+}
+
+TEST_F(RocksDBTest, FilterDelete2) {
+  {
+    RocksDbCommon common(tx_context_);
+    ASSERT_TRUE(
+        common.filterDelete(1ull, RocksDBPort::ColumnFamilyType::kWsv, "keY")
+            .second.ok());
+    ASSERT_TRUE(common.commit().ok());
+  }
+  {
+    RocksDbCommon common(tx_context_);
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, key1_).IsNotFound());
+  }
+  {
+    ASSERT_TRUE(readDb(key2_) == value2_);
+    ASSERT_TRUE(readDb(key3_) == value3_);
+    ASSERT_TRUE(readDb(key4_) == value4_);
+    ASSERT_TRUE(readDb(key5_) == value5_);
+  }
+}
+
+TEST_F(RocksDBTest, FilterDelete3) {
+  {
+    RocksDbCommon common(tx_context_);
+    ASSERT_TRUE(
+        common.filterDelete(1000ull, RocksDBPort::ColumnFamilyType::kWsv, "keY")
+            .second.ok());
+    ASSERT_TRUE(common.commit().ok());
+  }
+  {
+    RocksDbCommon common(tx_context_);
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, key1_).IsNotFound());
+    ASSERT_TRUE(
+        common.get(RocksDBPort::ColumnFamilyType::kWsv, key2_).IsNotFound());
   }
   {
     ASSERT_TRUE(readDb(key3_) == value3_);
@@ -452,7 +560,7 @@ TEST_F(RocksDBTest, Quorum) {
 
 TEST_F(RocksDBTest, SortingOrder) {
   RocksDbCommon common(tx_context_);
-  common.filterDelete("");
+  common.filterDelete(1ull, RocksDBPort::ColumnFamilyType::kWsv, "");
 
   common.valueBuffer().clear();
   ASSERT_TRUE(common.put("5").ok());
