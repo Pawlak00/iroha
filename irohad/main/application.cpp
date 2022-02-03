@@ -339,14 +339,7 @@ Irohad::RunResult Irohad::initStorage(
       return iroha::expected::makeError<std::string>(
           "Unexpected storage type!");
   }
-    // sql = std::make_unique<soci::session>(*pool_wrapper_->connection_pool_);
-    // const std::string tx = " ";
-    // burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
-    // std::cout<<&burrow_storage_.value().get()<<std::endl;
-    // vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
-  auto tmp = storage_creator();
-  
-  return tmp;
+  return storage_creator();
 }
 
 void Irohad::printDbStatus() {
@@ -1011,14 +1004,7 @@ Irohad::RunResult Irohad::run() {
     const std::string tx = " ";
     burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
     vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
-    // create postgres specific query executor for usage with burrow
-    // std::make_shared<PostgresSpecificQueryExecutor>(
-    //         *sql,
-    //         *blockStore(),
-    //         std::move(pending_txs_storage),
-    //         response_factory,
-    //         permConverter(),
-    //         log_manager->getChild("SpecificQueryExecutor")->getLogger())
+    log_->info("Burrow server run on port :28660");
   }
   
   
