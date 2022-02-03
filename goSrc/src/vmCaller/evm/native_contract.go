@@ -7,7 +7,6 @@ import (
 
 	"vmCaller/iroha"
 	"vmCaller/iroha_model"
-
 	"github.com/hyperledger/burrow/execution/native"
 	"github.com/hyperledger/burrow/permission"
 )
@@ -272,7 +271,7 @@ var (
 				* @param account  
 				* @param permission`,
 			PermFlag: permission.Call,
-			F:        grantPermission,
+			F:       grantPermission,
 		},
 		native.Function{
 			Comment: `
@@ -280,7 +279,7 @@ var (
 				* @param account  
 				* @param permission`,
 			PermFlag: permission.Call,
-			F:        revokePermission,
+			F:       revokePermission,
 		},
 		native.Function{
 			Comment: `
@@ -291,14 +290,14 @@ var (
 				* @param old_value
 				* @param check_empty`,
 			PermFlag: permission.Call,
-			F:        compareAndSetAccountDetail,
+			F:       compareAndSetAccountDetail,
 		},
 		native.Function{
 			Comment: `
 				* @notice Get Transactions
 				* @param tx hashes`,
 			PermFlag: permission.Call,
-			F:        getTransactions,
+			F:       getTransactions,
 		},
 		native.Function{
 			Comment: `
@@ -306,7 +305,7 @@ var (
 				* @param role name
 				* @param permissions`,
 			PermFlag: permission.Call,
-			F:        createRole,
+			F:       createRole,
 		},
 	)
 )
@@ -742,7 +741,7 @@ func removePeer(ctx native.Context, args removePeerArgs) (removePeerRets, error)
 }
 
 type GrantPermissionArgs struct {
-	AccountId  string
+	AccountId string
 	Permission string
 }
 
@@ -763,7 +762,7 @@ func grantPermission(ctx native.Context, args GrantPermissionArgs) (GrantPermiss
 }
 
 type RevokePermissionArgs = GrantPermissionArgs
-type RevokePermissionRets = GrantPermissionRets
+type RevokePermissionRets = GrantPermissionRets 
 
 func revokePermission(ctx native.Context, args RevokePermissionArgs) (RevokePermissionRets, error) {
 	err := iroha.RevokePermission(args.AccountId, args.Permission)
@@ -778,10 +777,10 @@ func revokePermission(ctx native.Context, args RevokePermissionArgs) (RevokePerm
 }
 
 type compareAndSetAccountDetailArgs struct {
-	AccountId  string
-	Key        string
-	Value      string
-	OldValue   string
+	AccountId string
+	Key string
+	Value string
+	OldValue string
 	CheckEmpty string
 }
 
@@ -803,7 +802,7 @@ func compareAndSetAccountDetail(ctx native.Context, args compareAndSetAccountDet
 }
 
 type createRoleArgs struct {
-	RoleName    string
+	RoleName string
 	Permissions string
 }
 
@@ -895,14 +894,14 @@ func getRolePermissions(ctx native.Context, args getRolePermissionsArgs) (getRol
 }
 
 type GetAccountTransactionsArgs struct {
-	Account       string
-	PageSize      string
-	FirstTxHash   string
-	FirstTxTime   string
-	LastTxTime    string
+	Account string
+	PageSize string
+	FirstTxHash string
+	FirstTxTime string
+	LastTxTime string
 	FirstTxHeight string
-	LastTxHeight  string
-	Ordering      string
+	LastTxHeight string
+	Ordering string 
 }
 
 type getAccountTransactionsRets struct {
@@ -910,7 +909,7 @@ type getAccountTransactionsRets struct {
 }
 
 func getAccountTransactions(ctx native.Context, args GetAccountTransactionsArgs) (getAccountTransactionsRets, error) {
-	paginationMetaArg := iroha_model.TxPaginationMeta{PageSize: &args.PageSize, FirstTxHash: &args.PageSize, Ordering: &args.Ordering,
+	paginationMetaArg := iroha_model.TxPaginationMeta{ PageSize: &args.PageSize, FirstTxHash: &args.PageSize, Ordering: &args.Ordering,
 		FirstTxTime: &args.FirstTxTime, LastTxTime: &args.LastTxTime, FirstTxHeight: &args.FirstTxHeight, LastTxHeight: &args.LastTxHeight}
 	transactions, err := iroha.GetAccountTransactions(args.Account, &paginationMetaArg)
 	if err != nil {
@@ -923,11 +922,11 @@ func getAccountTransactions(ctx native.Context, args GetAccountTransactionsArgs)
 }
 
 type GetPendingTransactionsArgs struct {
-	PageSize    string
+	PageSize string
 	FirstTxHash string
 	FirstTxTime string
-	LastTxTime  string
-	Ordering    string
+	LastTxTime string
+	Ordering string 
 }
 
 type getPendingTransactionsRets struct {
@@ -935,7 +934,7 @@ type getPendingTransactionsRets struct {
 }
 
 func getPendingTransactions(ctx native.Context, args GetPendingTransactionsArgs) (getPendingTransactionsRets, error) {
-	paginationMetaArg := iroha_model.TxPaginationMeta{PageSize: &args.PageSize, FirstTxHash: &args.PageSize, Ordering: &args.Ordering,
+	paginationMetaArg := iroha_model.TxPaginationMeta{ PageSize: &args.PageSize, FirstTxHash: &args.PageSize, Ordering: &args.Ordering,
 		FirstTxTime: &args.FirstTxTime, LastTxTime: &args.LastTxTime}
 	transactions, err := iroha.GetPendingTransactions(&paginationMetaArg)
 	if err != nil {
@@ -947,15 +946,15 @@ func getPendingTransactions(ctx native.Context, args GetPendingTransactionsArgs)
 }
 
 type GetAccountAssetTransactionsArgs struct {
-	AccountId     string
-	AssetId       string
-	PageSize      string
-	FirstTxHash   string
-	FirstTxTime   string
-	LastTxTime    string
+	AccountId string
+	AssetId string
+	PageSize string
+	FirstTxHash string
+	FirstTxTime string
+	LastTxTime string
 	FirstTxHeight string
-	LastTxHeight  string
-	Ordering      string
+	LastTxHeight string
+	Ordering string 
 }
 
 type getAccountAssetTransactionsRets struct {
@@ -963,7 +962,7 @@ type getAccountAssetTransactionsRets struct {
 }
 
 func getAccountAssetTransactions(ctx native.Context, args GetAccountAssetTransactionsArgs) (getAccountAssetTransactionsRets, error) {
-	paginationMetaArg := iroha_model.TxPaginationMeta{PageSize: &args.PageSize, FirstTxHash: &args.PageSize, Ordering: &args.Ordering,
+	paginationMetaArg := iroha_model.TxPaginationMeta{ PageSize: &args.PageSize, FirstTxHash: &args.PageSize, Ordering: &args.Ordering,
 		FirstTxTime: &args.FirstTxTime, LastTxTime: &args.LastTxTime, FirstTxHeight: &args.FirstTxHeight, LastTxHeight: &args.LastTxHeight}
 	transactions, err := iroha.GetAccountAssetTransactions(args.AccountId, args.AssetId, &paginationMetaArg)
 	if err != nil {
