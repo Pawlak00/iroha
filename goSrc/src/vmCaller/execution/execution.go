@@ -20,7 +20,6 @@ import (
 	"vmCaller/blockchain"
 
 	"github.com/hyperledger/burrow/execution/engine"
-	"github.com/tmthrgd/go-hex"
 )
 
 var (
@@ -54,6 +53,7 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string,
 		Balance:     999999,
 		Permissions: permission.DefaultAccountPermissions,
 	}); err != nil {
+<<<<<<< HEAD
 		return nil, fmt.Errorf("unable to update account ")
 	}
 	evmCaller := native.AddressFromName(from)
@@ -61,6 +61,18 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string,
 	if err != nil {
 		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
 	}
+=======
+		return nil, fmt.Errorf("Internal error occured while trying to update account")
+	}
+	evmCaller := native.AddressFromName(fromAddress)
+	callerAccount, err := worldState.GetAccount(evmCaller)
+	if err != nil {
+		return nil,fmt.Errorf("Error while getting iroha account of %s", fromAddress)
+	}
+	if callerAccount == nil {
+		return nil, fmt.Errorf("Sender account must be an existing iroha account")
+	}
+>>>>>>> e9efe530... errors added
 
 	engine := EngineWrapper{
 		engine:    burrowEVM,
@@ -69,7 +81,11 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string,
 	}
 	evmCallee := address
 	if vm.IsNative(evmCallee.String()) {
+<<<<<<< HEAD
 		return nil, fmt.Errorf("The callee address %s is reserved for a native contract and cannot be called directly", evmCallee.String())
+=======
+		return nil, fmt.Errorf("Address is native")
+>>>>>>> e9efe530... errors added
 	}
 
 	output, err := engine.Execute(evmCaller, evmCallee, data)
@@ -111,15 +127,6 @@ func (w *EngineWrapper) Execute(caller, callee crypto.Address, input []byte) ([]
 	return output, nil
 }
 
-func makeError(msg string) (*C.char, *C.char) {
-	return nil, C.CString(msg)
-}
-
-func addressFromNonce(nonce string) (address crypto.Address) {
-	hash := crypto.Keccak256(hex.MustDecodeString(nonce))
-	copy(address[:], hash[len(hash)-crypto.AddressLength:])
-	return
-}
 
 func (w *EngineWrapper) Execute(caller, callee crypto.Address, input []byte) ([]byte, error) {
 	var gas uint64 = 1000000
