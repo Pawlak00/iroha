@@ -7,15 +7,14 @@ package iroha
 // #include "ametsuchi/impl/proto_specific_query_executor.h"
 import "C"
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 	"unsafe"
-	"vmCaller/iroha_model"
-
 	"github.com/golang/protobuf/proto"
 	pb "iroha.protocol"
+	"vmCaller/iroha_model"
+	"encoding/json"
 )
 
 var (
@@ -183,7 +182,7 @@ func GrantPermission(account string, permission string) error {
 	perm := pb.GrantablePermission_value[permission]
 	command := &pb.Command{Command: &pb.Command_GrantPermission{
 		GrantPermission: &pb.GrantPermission{
-			AccountId:  account,
+			AccountId: account,
 			Permission: pb.GrantablePermission(perm),
 		}}}
 	commandResult, err := makeProtobufCmdAndExecute(IrohaCommandExecutor, command)
@@ -194,7 +193,7 @@ func RevokePermission(account string, permission string) error {
 	perm := pb.GrantablePermission_value[permission]
 	command := &pb.Command{Command: &pb.Command_RevokePermission{
 		RevokePermission: &pb.RevokePermission{
-			AccountId:  account,
+			AccountId: account,
 			Permission: pb.GrantablePermission(perm),
 		}}}
 	commandResult, err := makeProtobufCmdAndExecute(IrohaCommandExecutor, command)
@@ -203,28 +202,28 @@ func RevokePermission(account string, permission string) error {
 
 func MakeCompareAndSetAccountDetailArgs(account string, key string, value string, oldValue string, checkEmpty string) (pb.Command, error) {
 	cmd1 := &pb.CompareAndSetAccountDetail{
-		Key:       key,
-		Value:     value,
+		Key: key,
+		Value: value,
 		AccountId: account,
 	}
 	if len(oldValue) != 0 {
 		cmd1.OptOldValue = &pb.CompareAndSetAccountDetail_OldValue{oldValue}
 	}
-	if len(checkEmpty) != 0 {
+	if len(checkEmpty)!=0 {
 		val, err := strconv.ParseBool(checkEmpty)
-		if err == nil {
+		if err==nil {
 			cmd1.CheckEmpty = val
-		} else {
+		}else {
 			return pb.Command{}, fmt.Errorf("Incorrect value passed to check_empty field")
 		}
 	}
-	cmd := pb.Command{Command: &pb.Command_CompareAndSetAccountDetail{CompareAndSetAccountDetail: cmd1}}
+	cmd := pb.Command{Command:&pb.Command_CompareAndSetAccountDetail{CompareAndSetAccountDetail: cmd1}}
 	return cmd, nil
 }
 
 func CompareAndSetAccountDetail(account string, key string, value string, oldValue string, checkEmpty string) error {
 	command, err := MakeCompareAndSetAccountDetailArgs(account, key, value, oldValue, checkEmpty)
-	if err != nil {
+	if err!=nil {
 		return handleErrors(nil, err, "		")
 	}
 	commandResult, err := makeProtobufCmdAndExecute(IrohaCommandExecutor, &command)
@@ -240,13 +239,12 @@ func CreateRole(roleName string, permissions string) error {
 	}
 	command := &pb.Command{Command: &pb.Command_CreateRole{
 		CreateRole: &pb.CreateRole{
-			RoleName:    roleName,
-			Permissions: pb_perms,
+			RoleName: roleName,
+			Permissions:  pb_perms,
 		}}}
 	commandResult, err := makeProtobufCmdAndExecute(IrohaCommandExecutor, command)
 	return handleErrors(commandResult, err, "CreateRole")
 }
-
 // -----------------------Iroha queries---------------------------------------
 
 // Queries asset balance of an account
@@ -494,6 +492,7 @@ func GetRolePermissions(role string) ([]pb.RolePermission, error) {
 	}
 }
 
+
 func GetAccountTransactions(accountID string, txPaginationMeta *iroha_model.TxPaginationMeta) ([]*pb.Transaction, error) {
 	txPagination, err := iroha_model.MakeTxPaginationMeta(txPaginationMeta)
 	if err != nil {
@@ -615,10 +614,10 @@ func GetTransactions(hashes string) ([]*pb.Transaction, error) {
 
 func MakeQueryPayloadMeta() pb.QueryPayloadMeta {
 	return pb.QueryPayloadMeta{
-		CreatedTime:      uint64(time.Now().UnixNano() / int64(time.Millisecond)),
-		CreatorAccountId: Caller,
-		QueryCounter:     1}
-}
+			CreatedTime:      uint64(time.Now().UnixNano() / int64(time.Millisecond)),
+			CreatorAccountId: Caller,
+			QueryCounter:     1}
+} 
 
 // Execute Iroha command
 func makeProtobufCmdAndExecute(cmdExecutor unsafe.Pointer, command *pb.Command) (res *C.Iroha_CommandError, err error) {
