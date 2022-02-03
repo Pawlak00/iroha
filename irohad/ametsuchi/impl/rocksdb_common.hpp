@@ -552,7 +552,7 @@ namespace iroha::ametsuchi {
     expected::Result<void, DbError> reinitDB() {
       assert(db_name_);
       closeDb();
-      
+
       rocksdb::BlockBasedTableOptions table_options;
       table_options.block_cache = rocksdb::NewLRUCache(512 * 1024 * 1024LL);
       table_options.block_size = 32 * 1024;
@@ -605,12 +605,6 @@ namespace iroha::ametsuchi {
       return {};
     }
 
-    void flushDB() {
-      assert(transaction_db_);
-      assert(transaction_db_->Flush(rocksdb::FlushOptions()).ok());
-      assert(transaction_db_->FlushWAL(true).ok());
-    }
-
     template <typename LoggerT>
     void printStatus(LoggerT &log) {
       if (transaction_db_) {
@@ -661,7 +655,6 @@ namespace iroha::ametsuchi {
     void prepareTransaction(RocksDBContext &tx_context) {
       assert(transaction_db_);
       if (tx_context.transaction) {
-
         [[maybe_unused]] auto result =
             transaction_db_->BeginTransaction(rocksdb::WriteOptions(),
                                               rocksdb::TransactionOptions(),
@@ -794,7 +787,6 @@ namespace iroha::ametsuchi {
     void commitCache() {
       if (auto c = cache())
         c->commit();
-
     }
 
     auto getHandle(RocksDBPort::ColumnFamilyType type) {
@@ -802,7 +794,6 @@ namespace iroha::ametsuchi {
       assert(port()->cf_handles[type].handle != nullptr);
 
       return port()->cf_handles[type].handle;
-
     }
 
    public:
@@ -835,15 +826,10 @@ namespace iroha::ametsuchi {
       return port()->reinitDB();
     }
 
-    auto reinit() {
-      return tx_context_->db_port->reinitDB();
-    }
-
     /// Makes commit to DB
     auto commit() {
       rocksdb::Status status;
       if (isTransaction()) {
-
         if ((status = transaction()->Commit()); !status.ok())
           dropCache();
         else
@@ -1023,12 +1009,10 @@ namespace iroha::ametsuchi {
     /// Removes range of items by key-filter
     template <typename S, typename... Args>
     auto filterDelete(uint64_t delete_count,
-
                       RocksDBPort::ColumnFamilyType cf_type,
                       S const &fmtstring,
                       Args &&... args) -> std::pair<bool, rocksdb::Status> {
       auto it = seek(cf_type, fmtstring, std::forward<Args>(args)...);
-
       if (!it->status().ok())
         return std::make_pair<bool, rocksdb::Status>(false, it->status());
 
@@ -1039,17 +1023,14 @@ namespace iroha::ametsuchi {
       bool was_deleted = false;
       for (; delete_count-- && it->Valid() && it->key().starts_with(key);
            it->Next()) {
-
         if (auto status = transaction()->Delete(getHandle(cf_type), it->key());
             !status.ok())
-
           return std::pair<bool, rocksdb::Status>(was_deleted, status);
         else
           was_deleted = true;
       }
 
       return std::pair<bool, rocksdb::Status>(was_deleted, it->status());
-
     }
 
     void dropTable(RocksDBPort::ColumnFamilyType cf_type) {
@@ -2181,7 +2162,6 @@ namespace iroha::ametsuchi {
     return result;
   }
 
-
   inline expected::Result<void, DbError> dropStore(RocksDbCommon &common) {
     common.dropTable(RocksDBPort::ColumnFamilyType::kStore);
     return {};
@@ -2189,16 +2169,7 @@ namespace iroha::ametsuchi {
 
   inline expected::Result<void, DbError> dropWSV(RocksDbCommon &common) {
     common.dropTable(RocksDBPort::ColumnFamilyType::kWsv);
-
     return {};
-  }
-
-  inline expected::Result<void, DbError> dropStore(RocksDbCommon &common) {
-    return dropBranch(common, fmtstrings::kPathStore);
-  }
-
-  inline expected::Result<void, DbError> dropWSV(RocksDbCommon &common) {
-    return dropBranch(common, fmtstrings::kPathWsv);
   }
 
 }  // namespace iroha::ametsuchi
