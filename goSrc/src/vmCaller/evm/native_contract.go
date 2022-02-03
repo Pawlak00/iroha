@@ -308,7 +308,7 @@ var (
 			F:       createRole,
 		},
 	)
-	QueryServiceContract = native.New().MustContract("QueryServiceContract",
+		QueryServiceContract = native.New().MustContract("QueryServiceContract",
 		`* acmstate.ReaderWriter for bridging EVM state and Iroha state.
 			* @dev This interface describes the functions exposed by the native service contracts layer in burrow.
 			`,
@@ -421,7 +421,7 @@ var (
 				* @notice Get Transactions
 				* @param tx hashes`,
 			PermFlag: permission.Call,
-			F:        getTransactions,
+			F:       getTransactions,
 		},
 		native.Function{
 			Comment: `
@@ -429,7 +429,7 @@ var (
 				* @param role name
 				* @param permissions`,
 			PermFlag: permission.Call,
-			F:        createRole,
+			F:       createRole,
 		},
 	)
 )
