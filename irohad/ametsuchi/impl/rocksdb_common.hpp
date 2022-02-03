@@ -652,7 +652,31 @@ namespace iroha::ametsuchi {
    public:
     template <typename LoggerT>
     void printStatus(LoggerT &log) {
-      tx_context_->db_port->printStatus(log);
+      port()->printStatus(log);
+    }
+
+    auto propGetBlockCacheUsage() {
+      return port()->getPropUInt64("rocksdb.block-cache-usage");
+    }
+
+    auto propGetCurSzAllMemTables() {
+      return port()->getPropUInt64("rocksdb.cur-size-all-mem-tables");
+    }
+
+    auto propGetNumSnapshots() {
+      return port()->getPropUInt64("rocksdb.num-snapshots");
+    }
+
+    auto propGetTotalSSTFilesSize() {
+      return port()->getPropUInt64("rocksdb.total-sst-files-size");
+    }
+
+    auto propGetBlockCacheCapacity() {
+      return port()->getPropUInt64("rocksdb.block-cache-capacity");
+    }
+
+    auto reinit() {
+      return port()->reinitDB();
     }
 
     /// Makes commit to DB
