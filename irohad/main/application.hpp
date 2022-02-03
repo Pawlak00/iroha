@@ -7,6 +7,7 @@
 #define IROHA_APPLICATION_HPP
 
 #include <optional>
+
 #include <soci/soci.h>
 #include "consensus/consensus_block_cache.hpp"
 #include "consensus/gate_object.hpp"
@@ -113,7 +114,6 @@ namespace shared_model {
 
 class Irohad {
  public:
-  
   using RunResult = iroha::expected::Result<void, std::string>;
 
   /**
@@ -177,7 +177,6 @@ class Irohad {
    * @return void value on success, error message otherwise
    */
   RunResult run();
-
 
   virtual ~Irohad();
 
