@@ -1004,7 +1004,7 @@ Irohad::RunResult Irohad::run() {
   if (vm_caller_ &&  config_.database_config && config_.database_config->type == kDbTypePostgres) {
     sql_ = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
     const std::string tx = " ";
-    burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
+    burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql_.value().get(),tx,0);
     vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
     log_->info("Burrow server run on port :28660");
   }
