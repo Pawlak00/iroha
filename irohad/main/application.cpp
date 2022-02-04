@@ -161,9 +161,6 @@ Irohad::~Irohad() {
   if (ordering_gate) {
     ordering_gate->stop();
   }
-  if (vm_caller_) {
-    vm_caller_.value().get()->stopBurrow();
-  }
   subscription_engine_->dispose();
 }
 
@@ -319,6 +316,7 @@ Irohad::RunResult Irohad::initStorage(
           PgConnectionInit::init(
               startup_wsv_data_policy, *pg_opt_, log_manager_));
       pool_wrapper_ = std::move(pool_wrapper);
+      
     } break;
 
     case StorageType::kRocksDb: {
@@ -341,7 +339,14 @@ Irohad::RunResult Irohad::initStorage(
       return iroha::expected::makeError<std::string>(
           "Unexpected storage type!");
   }
-  return storage_creator();
+    // sql = std::make_unique<soci::session>(*pool_wrapper_->connection_pool_);
+    // const std::string tx = " ";
+    // burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
+    // std::cout<<&burrow_storage_.value().get()<<std::endl;
+    // vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
+  auto tmp = storage_creator();
+  
+  return tmp;
 }
 
 Irohad::RunResult Irohad::restoreWsv() {
@@ -986,6 +991,30 @@ namespace {
  * Run iroha daemon
  */
 Irohad::RunResult Irohad::run() {
+  if (config_.proposal_delay
+      <= config_.proposal_creation_timeout.value_or(kMaxRoundsDelayDefault)) {
+    return expected::makeError(
+        "proposal_delay must be more than proposal_creation_timeout");
+  }
+
+  // should check if db type is postgres and we use burrow
+  if (vm_caller_) {
+      // create burrow storage for burrow json-rpc api usage 
+    sql = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
+    const std::string tx = " ";
+    burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
+    vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
+    // create postgres specific query executor for usage with burrow
+    // std::make_shared<PostgresSpecificQueryExecutor>(
+    //         *sql,
+    //         *blockStore(),
+    //         std::move(pending_txs_storage),
+    //         response_factory,
+    //         permConverter(),
+    //         log_manager->getChild("SpecificQueryExecutor")->getLogger())
+  }
+  
+  
   ordering_init->subscribe([simulator(utils::make_weak(simulator)),
                             consensus_gate(utils::make_weak(consensus_gate)),
                             tx_processor(utils::make_weak(tx_processor)),
