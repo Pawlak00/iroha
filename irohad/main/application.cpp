@@ -995,9 +995,9 @@ Irohad::RunResult Irohad::run() {
   // should check if db type is postgres and we use burrow
   // we should check if we are using burrow
   if (vm_caller_) {
-    sql = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
+    sql_ = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
     const std::string tx = " ";
-    burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
+    burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql_.value().get(),tx,0);
     vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
     log_->info("Burrow server run on port :28660");
   }
