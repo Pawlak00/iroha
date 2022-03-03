@@ -62,10 +62,10 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, fromAddress 
 		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
 	}
 	evmCaller := native.AddressFromName(fromAddress)
-	// callerAccount, err := worldState.GetAccount(evmCaller)
-	// if err != nil {
-	// 	fmt.Println("Unable to get account")
-	// }
+	callerAccount, err := worldState.GetAccount(evmCaller)
+	if err != nil {
+		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
+	}
 
 	engine := EngineWrapper{
 		engine:    burrowEVM,
