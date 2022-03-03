@@ -20,6 +20,7 @@ import (
 	"vmCaller/blockchain"
 
 	"github.com/hyperledger/burrow/execution/engine"
+	"github.com/tmthrgd/go-hex"
 )
 
 var (
@@ -43,7 +44,7 @@ type EngineWrapper struct {
 
 // Run a contract's code on an isolated and unpersisted state
 // Cannot be used to create new contracts
-func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string, address crypto.Address, data []byte,
+func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, fromAddress string, address crypto.Address, data []byte,
 	logger *logging.Logger) (*exec.TxExecution, error) {
 	m.Lock()
 	defer m.Unlock()
@@ -60,6 +61,11 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string,
 	if err != nil {
 		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
 	}
+	evmCaller := native.AddressFromName(fromAddress)
+	// callerAccount, err := worldState.GetAccount(evmCaller)
+	// if err != nil {
+	// 	fmt.Println("Unable to get account")
+	// }
 
 	engine := EngineWrapper{
 		engine:    burrowEVM,
