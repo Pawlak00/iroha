@@ -51,13 +51,13 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, fromAddress 
 		Balance:     999999,
 		Permissions: permission.DefaultAccountPermissions,
 	}); err != nil {
-		fmt.Println("unable to update account")
+		return nil, fmt.Errorf("unable to update account %s", fromAddress)
 	}
 	evmCaller := native.AddressFromName(fromAddress)
-	// callerAccount, err := worldState.GetAccount(evmCaller)
-	// if err != nil {
-	// 	fmt.Println("Unable to get account")
-	// }
+	callerAccount, err := worldState.GetAccount(evmCaller)
+	if err != nil {
+		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
+	}
 
 	engine := EngineWrapper{
 		engine:    burrowEVM,
@@ -66,7 +66,7 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, fromAddress 
 	}
 	evmCallee := address
 	if vm.IsNative(evmCallee.String()) {
-		fmt.Println("address is reserved for native")
+		return nil, fmt.Errorf("The callee address %s is reserved for a native contract and cannot be called directly", evmCallee.String())
 	}
 
 	output, err := engine.Execute(evmCaller, evmCallee, data)

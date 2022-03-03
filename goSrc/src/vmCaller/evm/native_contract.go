@@ -1133,7 +1133,6 @@ func MustCreateQueryNatives() *native.Natives {
 }
 
 func createQueryNatives() (*native.Natives, error) {
-	fmt.Println()
 	ns, err := native.Merge(QueryServiceContract, native.Permissions, native.Precompiles)
 	if err != nil {
 		return nil, err

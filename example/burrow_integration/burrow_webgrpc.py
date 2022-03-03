@@ -5,7 +5,8 @@ from iroha import Iroha, IrohaGrpc
 import sys
 from Crypto.Hash import keccak
 import integration_helpers
-
+import json
+from web3 import Web3
 if sys.version_info[0] < 3:
     raise Exception("Python 3 or a more recent version is required.")
 
@@ -92,13 +93,17 @@ contract_bytecode = "608060405234801561001057600080fd5b50731fdcc92ffac72c169ccea
 address = deploy_contract(contract_bytecode)
 # 2 modify state -> modify's iroha state
 add_coin('wtr#energy','500')
-create_account(address,'a','test')
-create_account(address,'b','test')
 # 3 query for state using web3grpc -> print result
 web3grpc_bytecode = create_web3grpc_bytecode(address)
 iroha_address = '0.0.0.0:28660'
 iroha_account_sender = '"admin@test"'
 sm_address = '"%s"' % address
-sm_data = '"2c74aaaf00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000a61646D696E407465737400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a77747223656E6572677900000000000000000000000000000000000000000000"'
+sm_data = '"%s"' %web3grpc_bytecode
 cmd_to_execute = """curl %s -X POST   -H "Content-Type: application/json"   --data '{"jsonrpc":"2.0","method":"eth_call","params":[{"from": %s, "to" :%s, "data": %s }, "latest"],"id":1}' """ % (iroha_address,iroha_account_sender, sm_address, sm_data)
-os.system(cmd_to_execute)
+val = os.popen(cmd_to_execute).read()
+print("val is ",val)
+
+response = json.loads(val)['result'][2:]
+bytes_object = bytes.fromhex(response)
+ascii_string = Web3.toText(bytes_object)
+print(ascii_string)
