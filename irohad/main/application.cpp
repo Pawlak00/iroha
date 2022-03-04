@@ -995,7 +995,7 @@ Irohad::RunResult Irohad::run() {
 
   // should check if db type is postgres and we use burrow
   // we should check if we are using burrow
-  if (vm_caller_) {
+  if (vm_caller_ &&  config_.database_config && config_.database_config->type == kDbTypePostgres) {
     sql_ = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
     const std::string tx = " ";
     burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>
