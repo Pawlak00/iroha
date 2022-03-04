@@ -44,7 +44,7 @@ type EngineWrapper struct {
 
 // Run a contract's code on an isolated and unpersisted state
 // Cannot be used to create new contracts
-func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, fromAddress string, address crypto.Address, data []byte,
+func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, from string, address crypto.Address, data []byte,
 	logger *logging.Logger) (*exec.TxExecution, error) {
 	m.Lock()
 	defer m.Unlock()
@@ -61,7 +61,7 @@ func CallSim(reader acmstate.Reader, blockchain bcm.BlockchainInfo, fromAddress 
 	if err != nil {
 		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
 	}
-	evmCaller := native.AddressFromName(fromAddress)
+	evmCaller := native.AddressFromName(from)
 	callerAccount, err := worldState.GetAccount(evmCaller)
 	if err != nil {
 		return nil, fmt.Errorf("Passed account does not exist: %s", callerAccount)
