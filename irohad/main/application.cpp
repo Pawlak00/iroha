@@ -999,9 +999,9 @@ Irohad::RunResult Irohad::run() {
   }
 
   // should check if db type is postgres and we use burrow
-  if (vm_caller_) {
-      // create burrow storage for burrow json-rpc api usage 
-    sql = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
+  // we should check if we are using burrow
+  if (vm_caller_ &&  config_.database_config && config_.database_config->type == kDbTypePostgres) {
+    sql_ = std::make_shared<soci::session>(*pool_wrapper_->connection_pool_);
     const std::string tx = " ";
     burrow_storage_ = std::make_shared<iroha::ametsuchi::PostgresBurrowStorage>(*sql.value().get(),tx,0);
     vm_caller_.value().get()->exportBurrow(*burrow_storage_.value().get());
